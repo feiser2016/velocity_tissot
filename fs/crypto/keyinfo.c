@@ -36,7 +36,7 @@ static void derive_crypt_complete(struct crypto_async_request *req, int rc)
  *
  * Return: Zero on success; non-zero otherwise.
  */
-static int derive_key_aes(u8 deriving_key[FS_AES_128_ECB_KEY_SIZE],
+static int derive_key_aes(u8 deriving_key[FS_KEY_DERIVATION_NONCE_SIZE],
 				const struct fscrypt_key *source_key,
 				u8 derived_raw_key[FS_MAX_KEY_SIZE])
 {
@@ -61,7 +61,7 @@ static int derive_key_aes(u8 deriving_key[FS_AES_128_ECB_KEY_SIZE],
 			CRYPTO_TFM_REQ_MAY_BACKLOG | CRYPTO_TFM_REQ_MAY_SLEEP,
 			derive_crypt_complete, &ecr);
 	res = crypto_ablkcipher_setkey(tfm, deriving_key,
-					FS_AES_128_ECB_KEY_SIZE);
+				     FS_KEY_DERIVATION_NONCE_SIZE);
 	if (res < 0)
 		goto out;
 
@@ -121,7 +121,6 @@ static int validate_user_key(struct fscrypt_info *crypt_info,
 		goto out;
 	}
 	master_key = (struct fscrypt_key *)ukp->data;
-	BUILD_BUG_ON(FS_AES_128_ECB_KEY_SIZE != FS_KEY_DERIVATION_NONCE_SIZE);
 
 	if (master_key->size < min_keysize || master_key->size > FS_MAX_KEY_SIZE
 	    || master_key->size % AES_BLOCK_SIZE != 0) {
@@ -142,14 +141,10 @@ static const struct {
 	const char *cipher_str;
 	int keysize;
 } available_modes[] = {
-	[FS_ENCRYPTION_MODE_AES_256_XTS] = { "xts(aes)",
-					     FS_AES_256_XTS_KEY_SIZE },
-	[FS_ENCRYPTION_MODE_AES_256_CTS] = { "cts(cbc(aes))",
-					     FS_AES_256_CTS_KEY_SIZE },
-	[FS_ENCRYPTION_MODE_AES_128_CBC] = { "cbc(aes)",
-					     FS_AES_128_CBC_KEY_SIZE },
-	[FS_ENCRYPTION_MODE_AES_128_CTS] = { "cts(cbc(aes))",
-					     FS_AES_128_CTS_KEY_SIZE },
+	[FS_ENCRYPTION_MODE_AES_256_XTS]      = { "xts(aes)",		64 },
+	[FS_ENCRYPTION_MODE_AES_256_CTS]      = { "cts(cbc(aes))",	32 },
+	[FS_ENCRYPTION_MODE_AES_128_CBC]      = { "cbc(aes)",		16 },
+	[FS_ENCRYPTION_MODE_AES_128_CTS]      = { "cts(cbc(aes))",	16 },
 };
 
 static int determine_cipher_type(struct fscrypt_info *ci, struct inode *inode,
