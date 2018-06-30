@@ -2101,7 +2101,7 @@ static ssize_t f2fs_direct_IO(int rw, struct kiocb *iocb, struct iov_iter *iter,
 
 	err = check_direct_IO(inode, iter, offset);
 	if (err)
-		return err;
+		return 0;
 
 	if (__force_buffered_io(inode, rw))
 		return 0;
