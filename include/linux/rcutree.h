@@ -115,7 +115,7 @@ bool rcu_is_watching(void);
 
 #ifndef CONFIG_PREEMPT_RT_FULL
 void rcu_bh_force_quiescent_state(void);
-long rcu_batches_completed_bh(void);
+unsigned long rcu_batches_completed_bh(void);
 #else
 # define rcu_bh_force_quiescent_state	rcu_force_quiescent_state
 # define rcu_batches_completed_bh	rcu_batches_completed
