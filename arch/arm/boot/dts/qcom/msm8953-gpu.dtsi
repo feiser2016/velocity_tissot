@@ -67,7 +67,7 @@
 		qcom,id = <0>;
 		qcom,chipid = <0x05000600>;
 
-		qcom,initial-pwrlevel = <7>;
+		qcom,initial-pwrlevel = <5>;
 
 		/* Disable wake-on-touch */
 		qcom,disable-wake-on-touch;
