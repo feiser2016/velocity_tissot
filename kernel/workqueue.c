@@ -340,15 +340,9 @@ static void copy_workqueue_attrs(struct workqueue_attrs *to,
 #define CREATE_TRACE_POINTS
 #include <trace/events/workqueue.h>
 
-#define assert_rcu_or_pool_mutex()					\
-	RCU_LOCKDEP_WARN(!rcu_lockdep_assert(rcu_read_lock_held() &&		\
-			 !lockdep_is_held(&wq_pool_mutex),		\
-			 "RCU or wq_pool_mutex should be held")
+#define assert_rcu_or_pool_mutex()
 
-#define assert_rcu_or_wq_mutex(wq)					\
-	RCU_LOCKDEP_WARN(!rcu_read_lock_held() &&			\
-			 !lockdep_is_held(&wq->mutex),			\
-			 "RCU or wq->mutex should be held")
+#define assert_rcu_or_wq_mutex(wq)
 
 #define for_each_cpu_worker_pool(pool, cpu)				\
 	for ((pool) = &per_cpu(cpu_worker_pools, cpu)[0];		\
