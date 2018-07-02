@@ -6,6 +6,7 @@
 #endif
 
 #include <linux/bug.h>
+#include <linux/spinlock_types.h>
 
 extern void
 __rt_spin_lock_init(spinlock_t *lock, char *name, struct lock_class_key *key);
