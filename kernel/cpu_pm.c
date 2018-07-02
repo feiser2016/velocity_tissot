@@ -26,12 +26,11 @@ bool from_suspend = false;
 
 static ATOMIC_NOTIFIER_HEAD(cpu_pm_notifier_chain);
 
-static int cpu_pm_notify(enum cpu_pm_event event, int nr_to_call, int *nr_calls,
-		void *data)
+static int cpu_pm_notify(enum cpu_pm_event event, int nr_to_call, int *nr_calls)
 {
 	int ret;
 
-	ret = __atomic_notifier_call_chain(&cpu_pm_notifier_chain, event, NULL,
+	ret = __raw_notifier_call_chain(&cpu_pm_notifier_chain, event, NULL,
 		nr_to_call, nr_calls);
 
 	return notifier_to_errno(ret);
@@ -88,13 +87,13 @@ int cpu_pm_enter(void)
 	int nr_calls;
 	int ret = 0;
 
-	ret = cpu_pm_notify(CPU_PM_ENTER, -1, &nr_calls, NULL);
+	ret = cpu_pm_notify(CPU_PM_ENTER, -1, &nr_calls);
 	if (ret)
 		/*
 		 * Inform listeners (nr_calls - 1) about failure of CPU PM
 		 * PM entry who are notified earlier to prepare for it.
 		 */
-		cpu_pm_notify(CPU_PM_ENTER_FAILED, nr_calls - 1, NULL, NULL);
+		cpu_pm_notify(CPU_PM_ENTER_FAILED, nr_calls - 1, NULL);
 
 	return ret;
 }
@@ -139,15 +138,13 @@ int cpu_cluster_pm_enter(unsigned long aff_level)
 	int nr_calls;
 	int ret = 0;
 
-	ret = cpu_pm_notify(CPU_CLUSTER_PM_ENTER, -1, &nr_calls,
-			(void *) aff_level);
+	ret = cpu_pm_notify(CPU_CLUSTER_PM_ENTER, -1, &nr_calls);
 	if (ret)
 		/*
 		 * Inform listeners (nr_calls - 1) about failure of CPU cluster
 		 * PM entry who are notified earlier to prepare for it.
 		 */
-		cpu_pm_notify(CPU_CLUSTER_PM_ENTER_FAILED, nr_calls - 1, NULL,
-				(void *) aff_level);
+		cpu_pm_notify(CPU_CLUSTER_PM_ENTER_FAILED, nr_calls - 1, NULL);
 
 	return ret;
 }

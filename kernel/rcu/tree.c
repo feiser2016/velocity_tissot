@@ -155,6 +155,15 @@ EXPORT_SYMBOL_GPL(rcu_scheduler_active);
  */
 static int rcu_scheduler_fully_active __read_mostly;
 
+/*
+ * Control variables for per-CPU and per-rcu_node kthreads.  These
+ * handle all flavors of RCU.
+ */
+static DEFINE_PER_CPU(struct task_struct *, rcu_cpu_kthread_task);
+DEFINE_PER_CPU(unsigned int, rcu_cpu_kthread_status);
+DEFINE_PER_CPU(unsigned int, rcu_cpu_kthread_loops);
+DEFINE_PER_CPU(char, rcu_cpu_has_work);
+
 static void rcu_init_new_rnp(struct rcu_node *rnp_leaf);
 static void rcu_cleanup_dead_rnp(struct rcu_node *rnp_leaf);
 static void rcu_boost_kthread_setaffinity(struct rcu_node *rnp, int outgoingcpu);
@@ -3027,32 +3036,6 @@ static void rcu_wake_cond(struct task_struct *t, int status)
 		wake_up_process(t);
 }
 
-/*
- * Wake up this CPU's rcuc kthread to do RCU core processing.
- */
-static struct smp_hotplug_thread rcu_cpu_thread_spec = {
-	.store			= &rcu_cpu_kthread_task,
-	.thread_should_run	= rcu_cpu_kthread_should_run,
-	.thread_fn		= rcu_cpu_kthread,
-	.thread_comm		= "rcuc/%u",
-	.setup			= rcu_cpu_kthread_setup,
-	.park			= rcu_cpu_kthread_park,
-};
-
-/*
- * Spawn per-CPU RCU core processing kthreads.
- */
-static int __init rcu_spawn_core_kthreads(void)
-{
-	int cpu;
-
-	for_each_possible_cpu(cpu)
-		per_cpu(rcu_cpu_has_work, cpu) = 0;
-	BUG_ON(smpboot_register_percpu_thread(&rcu_cpu_thread_spec));
-	return 0;
-}
-early_initcall(rcu_spawn_core_kthreads);
-
 static void rcu_cpu_kthread_park(unsigned int cpu)
 {
 	per_cpu(rcu_cpu_kthread_status, cpu) = RCU_KTHREAD_OFFCPU;
@@ -3097,7 +3080,33 @@ static void rcu_cpu_kthread(unsigned int cpu)
 	schedule_timeout_interruptible(2);
 	trace_rcu_utilization(TPS("End CPU kthread@rcu_yield"));
 	*statusp = RCU_KTHREAD_WAITING;
- }
+}
+
+/*
+ * Wake up this CPU's rcuc kthread to do RCU core processing.
+ */
+static struct smp_hotplug_thread rcu_cpu_thread_spec = {
+	.store			= &rcu_cpu_kthread_task,
+	.thread_should_run	= rcu_cpu_kthread_should_run,
+	.thread_fn		= rcu_cpu_kthread,
+	.thread_comm		= "rcuc/%u",
+	.setup			= rcu_cpu_kthread_setup,
+	.park			= rcu_cpu_kthread_park,
+};
+
+/*
+ * Spawn per-CPU RCU core processing kthreads.
+ */
+static int __init rcu_spawn_core_kthreads(void)
+{
+	int cpu;
+
+	for_each_possible_cpu(cpu)
+		per_cpu(rcu_cpu_has_work, cpu) = 0;
+	BUG_ON(smpboot_register_percpu_thread(&rcu_cpu_thread_spec));
+	return 0;
+}
+early_initcall(rcu_spawn_core_kthreads);
 
 static void invoke_rcu_core(void)
 {

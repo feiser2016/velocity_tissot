@@ -647,57 +647,9 @@ void wake_up_q(struct wake_q_head *head)
 	}
 }
 
-void wake_q_add(struct wake_q_head *head, struct task_struct *task)
-{
-	struct wake_q_node *node = &task->wake_q;
-
-	/*
-	 * Atomically grab the task, if ->wake_q is !nil already it means
-	 * its already queued (either by us or someone else) and will get the
-	 * wakeup due to that.
-	 *
-	 * This cmpxchg() implies a full barrier, which pairs with the write
-	 * barrier implied by the wakeup in wake_up_list().
-	 */
-	if (cmpxchg(&node->next, NULL, WAKE_Q_TAIL))
-		return;
-
-	head->count++;
-
-	get_task_struct(task);
-
-	/*
-	 * The head is context local, there can be no concurrency.
-	 */
-	*head->lastp = node;
-	head->lastp = &node->next;
-}
-
 static int
 try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags,
 	       int sibling_count_hint);
-
-void wake_up_q(struct wake_q_head *head)
-{
-	struct wake_q_node *node = head->first;
-
-	while (node != WAKE_Q_TAIL) {
-		struct task_struct *task;
-
-		task = container_of(node, struct task_struct, wake_q);
-		BUG_ON(!task);
-		/* task can safely be re-inserted now */
-		node = node->next;
-		task->wake_q.next = NULL;
-
-		/*
-		 * try_to_wake_up() implies a wmb() to pair with the queueing
-		 * in wake_q_add() so as not to miss wakeups.
-		 */
-		try_to_wake_up(task, TASK_NORMAL, 0, head->count);
-		put_task_struct(task);
-	}
-}
 
 /*
  * resched_curr - mark rq's current task 'to be rescheduled now'.
@@ -1294,9 +1246,10 @@ static struct rq *move_queued_task(struct task_struct *p, int new_cpu)
 struct migration_arg {
 	struct task_struct *task;
 	int dest_cpu;
+};
 
-	+static bool check_task_state(struct task_struct *p, long match_state)
-	{
+static bool check_task_state(struct task_struct *p, long match_state)
+{
 	bool match = false;
 
 	raw_spin_lock_irq(&p->pi_lock);
@@ -1305,8 +1258,7 @@ struct migration_arg {
 	raw_spin_unlock_irq(&p->pi_lock);
 
 	return match;
-	}
-};
+}
 
 /*
  * Move (not current) task off this cpu, onto dest cpu. We're doing
@@ -1402,38 +1354,7 @@ void set_cpus_allowed_common(struct task_struct *p, const struct cpumask *new_ma
 	p->nr_cpus_allowed = cpumask_weight(new_mask);
 }
 
-void do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask)
-{
-	struct rq *rq = task_rq(p);
-	bool queued, running;
 
-	lockdep_assert_held(&p->pi_lock);
-
-	queued = task_on_rq_queued(p);
-	running = task_current(rq, p);
-
-	if (queued) {
-		/*
-		 * Because __kthread_bind() calls this on blocked tasks without
-		 * holding rq->lock.
-		 */
-		lockdep_assert_held(&rq->lock);
-		dequeue_task(rq, p, 0);
-	}
-	if (running)
-		put_prev_task(rq, p);
-
-	if (!migrate_disabled_updated(p)) {
-		if (p->sched_class && p->sched_class->set_cpus_allowed)
-			p->sched_class->set_cpus_allowed(p, new_mask);
-		p->nr_cpus_allowed = cpumask_weight(new_mask);
-	}
-
-	if (running)
-		p->sched_class->set_curr_task(rq);
-	if (queued)
-		enqueue_task(rq, p, 0);
-}
 
 static DEFINE_PER_CPU(struct cpumask, sched_cpumasks);
 static DEFINE_MUTEX(sched_down_mutex);
@@ -2386,7 +2307,7 @@ EXPORT_SYMBOL(wake_up_process_no_notif);
  */
 int wake_up_lock_sleeper(struct task_struct *p)
 {
-	return try_to_wake_up(p, TASK_UNINTERRUPTIBLE, WF_LOCK_SLEEPER);
+	return try_to_wake_up(p, TASK_UNINTERRUPTIBLE, WF_LOCK_SLEEPER, 1);
 }
 
 int wake_up_state(struct task_struct *p, unsigned int state)
@@ -3503,6 +3424,39 @@ static inline void schedule_debug(struct task_struct *prev)
 #define MIGRATE_DISABLE_SET_AFFIN	(1<<30) /* Can't make a negative */
 #define migrate_disabled_updated(p)	((p)->migrate_disable & MIGRATE_DISABLE_SET_AFFIN)
 #define migrate_disable_count(p)	((p)->migrate_disable & ~MIGRATE_DISABLE_SET_AFFIN)
+
+void do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask)
+{
+	struct rq *rq = task_rq(p);
+	bool queued, running;
+
+	lockdep_assert_held(&p->pi_lock);
+
+	queued = task_on_rq_queued(p);
+	running = task_current(rq, p);
+
+	if (queued) {
+		/*
+		 * Because __kthread_bind() calls this on blocked tasks without
+		 * holding rq->lock.
+		 */
+		lockdep_assert_held(&rq->lock);
+		dequeue_task(rq, p, 0);
+	}
+	if (running)
+		put_prev_task(rq, p);
+
+	if (!migrate_disabled_updated(p)) {
+		if (p->sched_class && p->sched_class->set_cpus_allowed)
+			p->sched_class->set_cpus_allowed(p, new_mask);
+		p->nr_cpus_allowed = cpumask_weight(new_mask);
+	}
+
+	if (running)
+		p->sched_class->set_curr_task(rq);
+	if (queued)
+		enqueue_task(rq, p, 0);
+}
 
 static inline void update_migrate_disable(struct task_struct *p)
 {

@@ -1252,13 +1252,16 @@ static void rcu_prepare_kthreads(int cpu)
  * Because we not have RCU_FAST_NO_HZ, just check whether this CPU needs
  * any flavor of RCU.
  */
+#ifndef CONFIG_RCU_NOCB_CPU_ALL
 int rcu_needs_cpu(unsigned long *delta_jiffies)
 {
 	*delta_jiffies = ULONG_MAX;
 	return IS_ENABLED(CONFIG_RCU_NOCB_CPU_ALL)
 	       ? 0 : rcu_cpu_has_callbacks(NULL);
 }
+#endif /* #ifndef CONFIG_RCU_NOCB_CPU_ALL */
 #endif /* !defined(CONFIG_RCU_FAST_NO_HZ) || defined(CONFIG_PREEMPT_RT_FULL) */
+
 #if !defined(CONFIG_RCU_FAST_NO_HZ)
 
 /*
@@ -1368,6 +1371,7 @@ static bool __maybe_unused rcu_try_advance_all_cbs(void)
  *
  * The caller must have disabled interrupts.
  */
+#ifndef CONFIG_RCU_NOCB_CPU_ALL
 int rcu_needs_cpu(unsigned long *dj)
 {
 	struct rcu_dynticks *rdtp = this_cpu_ptr(&rcu_dynticks);
@@ -1403,6 +1407,8 @@ int rcu_needs_cpu(unsigned long *dj)
 	}
 	return 0;
 }
+#endif /* #ifndef CONFIG_RCU_NOCB_CPU_ALL */
+#endif /* #ifndef CONFIG_PREEMPT_RT_FULL */
 
 /*
  * Prepare a CPU for idle from an RCU perspective.  The first major task
@@ -1416,6 +1422,7 @@ int rcu_needs_cpu(unsigned long *dj)
  */
 static void rcu_prepare_for_idle(void)
 {
+#ifndef CONFIG_RCU_NOCB_CPU_ALL
 	bool needwake;
 	struct rcu_data *rdp;
 	struct rcu_dynticks *rdtp = this_cpu_ptr(&rcu_dynticks);
@@ -1473,6 +1480,7 @@ static void rcu_prepare_for_idle(void)
 		if (needwake)
 			rcu_gp_kthread_wake(rsp);
 	}
+#endif /* #ifndef CONFIG_RCU_NOCB_CPU_ALL */
 }
 
 /*
@@ -1482,11 +1490,13 @@ static void rcu_prepare_for_idle(void)
  */
 static void rcu_cleanup_after_idle(void)
 {
+#ifndef CONFIG_RCU_NOCB_CPU_ALL
 	if (IS_ENABLED(CONFIG_RCU_NOCB_CPU_ALL) ||
 	    rcu_is_nocb_cpu(smp_processor_id()))
 		return;
 	if (rcu_try_advance_all_cbs())
 		invoke_rcu_core();
+#endif /* #ifndef CONFIG_RCU_NOCB_CPU_ALL */
 }
 
 /*
@@ -1585,6 +1595,8 @@ early_initcall(rcu_register_oom_notifier);
 
 #endif /* #else #if !defined(CONFIG_RCU_FAST_NO_HZ) */
 
+#ifdef CONFIG_RCU_CPU_STALL_INFO
+
 #ifdef CONFIG_RCU_FAST_NO_HZ
 
 static void print_cpu_stall_fast_no_hz(char *cp, int cpu)
@@ -1677,6 +1689,8 @@ static void increment_cpu_stall_ticks(void)
 		raw_cpu_inc(rsp->rda->ticks_this_gp);
 }
 
+#endif /* #else #ifdef CONFIG_RCU_CPU_STALL_INFO */
+
 #ifdef CONFIG_RCU_NOCB_CPU
 
 /*
@@ -1759,7 +1773,6 @@ bool rcu_is_nocb_cpu(int cpu)
 	return false;
 }
 #endif /* #ifndef CONFIG_RCU_NOCB_CPU_ALL */
-#endif /* #ifndef CONFIG_PREEMPT_RT_FULL */
 
 /*
  * Kick the leader kthread for this NOCB group.
