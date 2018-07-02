@@ -1,3 +1,5 @@
+#include <linux/rwlock_types.h>
+
 #ifndef __LINUX_RWLOCK_RT_H
 #define __LINUX_RWLOCK_RT_H
 
