@@ -64,10 +64,10 @@ static int lz4_decompress_crypto(struct crypto_tfm *tfm, const u8 *src,
 {
 	int out_len = LZ4_decompress_safe(src, dst, slen, *dlen);
 
-	if (out_len < 0)
-		return out_len;
+	if (err < 0)
+		return -EINVAL;
 
-	*dlen = out_len;
+	*dlen = tmp_len;
 	return 0;
 }
 

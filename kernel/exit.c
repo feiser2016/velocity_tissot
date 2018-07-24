@@ -55,8 +55,6 @@
 #include <linux/shm.h>
 #include <linux/kcov.h>
 
-#include "sched/tune.h"
-
 #include <asm/uaccess.h>
 #include <asm/unistd.h>
 #include <asm/pgtable.h>
@@ -732,7 +730,7 @@ void do_exit(long code)
 
 	exit_signals(tsk);  /* sets PF_EXITING */
 
-	schedtune_exit_task(tsk);
+	sched_exit(tsk);
 
 	if (tsk->flags & PF_SU) {
 		su_exit();
@@ -802,9 +800,7 @@ void do_exit(long code)
 	 */
 	flush_ptrace_hw_breakpoint(tsk);
 
-	TASKS_RCU(preempt_disable());
 	TASKS_RCU(tasks_rcu_i = __srcu_read_lock(&tasks_rcu_exit_srcu));
-	TASKS_RCU(preempt_enable());
 	exit_notify(tsk, group_dead);
 	proc_exit_connector(tsk);
 #ifdef CONFIG_NUMA

@@ -1386,7 +1386,7 @@ static int ft5435_ts_suspend(struct device *dev)
 	}
 #endif
 
-    disable_irq(data->client->irq);
+	disable_irq(data->client->irq);
 
 	if (gpio_is_valid(data->pdata->reset_gpio)) {
 		gpio_set_value_cansleep(data->pdata->reset_gpio, 1);

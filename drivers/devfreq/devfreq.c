@@ -25,7 +25,6 @@
 #include <linux/list.h>
 #include <linux/printk.h>
 #include <linux/hrtimer.h>
-#include <linux/fb.h>
 #include "governor.h"
 
 static struct class *devfreq_class;
@@ -210,14 +209,9 @@ int update_devfreq(struct devfreq *devfreq)
 		return -EINVAL;
 
 	/* Reevaluate the proper frequency */
-	if (devfreq->do_wake_boost) {
-		/* Use the max freq when the screen is turned on */
-		freq = UINT_MAX;
-	} else {
-		err = devfreq->governor->get_target_freq(devfreq, &freq, &flags);
-		if (err)
-			return err;
-	}
+	err = devfreq->governor->get_target_freq(devfreq, &freq, &flags);
+	if (err)
+		return err;
 
 	/*
 	 * Adjust the freuqency with user freq and QoS.
@@ -486,7 +480,7 @@ struct devfreq *devfreq_add_device(struct device *dev,
 {
 	struct devfreq *devfreq;
 	struct devfreq_governor *governor;
-	int i, err = 0;
+	int err = 0;
 
 	if (!dev || !profile || !governor_name) {
 		dev_err(dev, "%s: Invalid parameters.\n", __func__);
@@ -557,13 +551,6 @@ struct devfreq *devfreq_add_device(struct device *dev,
 		goto err_init;
 	}
 	mutex_unlock(&devfreq_list_lock);
-
-	for (i = 0; i < ARRAY_SIZE(boost_devices); i++) {
-		if (!strcmp(dev_name(dev), boost_devices[i])) {
-			devfreq->needs_wake_boost = true;
-			break;
-		}
-	}
 
 	return devfreq;
 
@@ -1199,10 +1186,6 @@ static int __init devfreq_init(void)
 		return -ENOMEM;
 	}
 	devfreq_class->dev_groups = devfreq_groups;
-
-	INIT_WORK(&wake_boost_work, wake_boost_fn);
-	INIT_DELAYED_WORK(&wake_unboost_work, wake_unboost_fn);
-	fb_register_client(&fb_notifier_callback_nb);
 
 	return 0;
 }

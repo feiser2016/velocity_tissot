@@ -1,4 +1,4 @@
-/* Copyright (c) 2014-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2014-2017, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -1283,9 +1283,10 @@ static int _execute_reg_sequence(struct adreno_device *adreno_dev,
 			/* Delay for X usec */
 			udelay(cur[1]);
 			cur += 2;
-		} else
+			break;
+		default:
 			return -EINVAL;
-	}
+	} }
 	return 0;
 }
 

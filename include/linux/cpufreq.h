@@ -514,8 +514,6 @@ int cpufreq_driver_target(struct cpufreq_policy *policy,
 int __cpufreq_driver_target(struct cpufreq_policy *policy,
 				   unsigned int target_freq,
 				   unsigned int relation);
-unsigned int cpufreq_driver_resolve_freq(struct cpufreq_policy *policy,
-					 unsigned int target_freq);
 int cpufreq_register_governor(struct cpufreq_governor *governor);
 void cpufreq_unregister_governor(struct cpufreq_governor *governor);
 
@@ -565,27 +563,6 @@ extern struct cpufreq_governor cpufreq_gov_bioshock;
 #elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_DARKNESS)
 extern struct cpufreq_governor cpufreq_gov_darkness;
 #define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_darkness)
-#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_SCHEDUTIL)
-extern struct cpufreq_governor cpufreq_gov_schedutil;
-#define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_schedutil)
-#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_ELECTROUTIL)
-extern struct cpufreq_governor cpufreq_gov_electroutil;
-#define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_electroutil)
-#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_ALUCARDSCHED)
-extern struct cpufreq_governor cpufreq_gov_alucardsched;
-#define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_alucardsched)
-#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_DARKNESSSCHED)
-extern struct cpufreq_governor cpufreq_gov_darknesssched;
-#define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_darknesssched)
-#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_HELIX)
-extern struct cpufreq_governor cpufreq_gov_helix_schedutil;
-#define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_helix_schedutil)
-#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_ENERGY)
-extern struct cpufreq_governor cpufreq_gov_energy_dcfc;
-#define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_energy_dcfc)
-#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_PWRUTILX)
-extern struct cpufreq_governor cpufreq_gov_pwrutilx;
-#define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_pwrutilx)
 #elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_CHILL)
 extern struct cpufreq_governor cpufreq_gov_chill;
 #define CPUFREQ_DEFAULT_GOVERNOR (&cpufreq_gov_chill)
@@ -611,37 +588,6 @@ extern struct cpufreq_governor cpufreq_gov_elementalx;
 extern struct cpufreq_governor cpufreq_gov_zzmoove;
 #define CPUFREQ_DEFAULT_GOVERNOR (&cpufreq_gov_zzmoove)
 #endif
-
-static inline void cpufreq_policy_apply_limits(struct cpufreq_policy *policy)
-{
-	if (policy->max < policy->cur)
-		__cpufreq_driver_target(policy, policy->max, CPUFREQ_RELATION_H);
-	else if (policy->min > policy->cur)
-		__cpufreq_driver_target(policy, policy->min, CPUFREQ_RELATION_L);
-}
-
-/* Governor attribute set */
-struct gov_attr_set {
-	struct kobject kobj;
-	struct list_head policy_list;
-	struct mutex update_lock;
-	int usage_count;
-};
-
-/* sysfs ops for cpufreq governors */
-extern const struct sysfs_ops governor_sysfs_ops;
-
-void gov_attr_set_init(struct gov_attr_set *attr_set, struct list_head *list_node);
-void gov_attr_set_get(struct gov_attr_set *attr_set, struct list_head *list_node);
-unsigned int gov_attr_set_put(struct gov_attr_set *attr_set, struct list_head *list_node);
-
-/* Governor sysfs attribute */
-struct governor_attr {
-	struct attribute attr;
-	ssize_t (*show)(struct gov_attr_set *attr_set, char *buf);
-	ssize_t (*store)(struct gov_attr_set *attr_set, const char *buf,
-			 size_t count);
-};
 
 /*********************************************************************
  *                     FREQUENCY TABLE HELPERS                       *
@@ -775,24 +721,14 @@ int cpufreq_generic_init(struct cpufreq_policy *policy,
  *                         CPUFREQ STATS                             *
  *********************************************************************/
 
-#ifdef CONFIG_CPU_FREQ_STAT
-
 void acct_update_power(struct task_struct *p, cputime_t cputime);
 void cpufreq_task_stats_init(struct task_struct *p);
 void cpufreq_task_stats_exit(struct task_struct *p);
+void cpufreq_task_stats_remove_uids(uid_t uid_start, uid_t uid_end);
 int  proc_time_in_state_show(struct seq_file *m, struct pid_namespace *ns,
-			     struct pid *pid, struct task_struct *p);
-#else
-
-static inline void acct_update_power(struct task_struct *p,
-	cputime_t cputime) {}
-static inline void cpufreq_task_stats_init(struct task_struct *p) {}
-static inline void cpufreq_task_stats_exit(struct task_struct *p) {}
-
-#endif
+	struct pid *pid, struct task_struct *p);
 
 struct sched_domain;
 unsigned long cpufreq_scale_freq_capacity(struct sched_domain *sd, int cpu);
-unsigned long cpufreq_scale_max_freq_capacity(struct sched_domain *sd, int cpu);
-unsigned long cpufreq_scale_min_freq_capacity(struct sched_domain *sd, int cpu);
+unsigned long cpufreq_scale_max_freq_capacity(int cpu);
 #endif /* _LINUX_CPUFREQ_H */

@@ -19,6 +19,10 @@ SUBSYS(cpuacct)
 SUBSYS(schedtune)
 #endif
 
+#if IS_ENABLED(CONFIG_BLK_CGROUP)
+SUBSYS(blkio)
+#endif
+
 #if IS_ENABLED(CONFIG_MEMCG)
 SUBSYS(memory)
 #endif
