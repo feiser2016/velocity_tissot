@@ -4993,7 +4993,6 @@ static int __migrate_task(struct task_struct *p, int src_cpu, int dest_cpu)
 {
 	struct rq *rq;
 	int ret = 0;
-	int check_groups;
 
 	if (unlikely(!cpu_active(dest_cpu)))
 		return ret;
@@ -5009,9 +5008,6 @@ static int __migrate_task(struct task_struct *p, int src_cpu, int dest_cpu)
 	/* Affinity changed (again). */
 	if (!cpumask_test_cpu(dest_cpu, tsk_cpus_allowed(p)))
 		goto fail;
-
-	/* No need for rcu_read_lock() here. Protected by pi->lock */
-	check_groups = is_task_in_related_thread_group(p);
 
 	/*
 	 * If we're not on a rq, the next wake-up will ensure we're
