@@ -352,8 +352,8 @@ static inline void set_post_schedule(struct rq *rq)
 
 static inline void queue_pull_task(struct rq *rq)
 {
-	queue_balance_callback(rq, &per_cpu(rt_pull_head, rq->cpu),
-		pull_rt_task);
+	/*queue_balance_callback(rq, &per_cpu(rt_pull_head, rq->cpu),
+		pull_rt_task);*/
 }
 
 static void enqueue_pushable_task(struct rq *rq, struct task_struct *p)
