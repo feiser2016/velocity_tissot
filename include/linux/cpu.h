@@ -31,7 +31,7 @@ extern struct device *get_cpu_device(unsigned cpu);
 extern bool cpu_is_hotpluggable(unsigned cpu);
 extern bool arch_match_cpu_phys_id(int cpu, u64 phys_id);
 extern bool arch_find_n_match_cpu_physical_id(struct device_node *cpun,
-					      int cpu, unsigned int *thread);
+						  int cpu, unsigned int *thread);
 
 extern int cpu_add_dev_attr(struct device_attribute *attr);
 extern void cpu_remove_dev_attr(struct device_attribute *attr);
@@ -92,6 +92,10 @@ enum {
 					* Called on the new cpu, just before
 					* enabling interrupts. Must not sleep,
 					* must not fail */
+#define CPU_DYING_IDLE 0x000B	   /* CPU (unsigned)v dying, reached \
+									* idle loop. */
+#define CPU_BROKEN 0x000C		   /* CPU (unsigned)v did not die properly,
+									* perhaps due to preemption. */
 
 /* Used for CPU hotplug events occurring while tasks are frozen due to a suspend
  * operation in progress
@@ -128,17 +132,20 @@ enum {
 #endif /* #else #if defined(CONFIG_HOTPLUG_CPU) || !defined(MODULE) */
 
 #ifdef CONFIG_HOTPLUG_CPU
-extern int register_cpu_notifier(struct notifier_block *nb);
+	extern int
+	register_cpu_notifier(struct notifier_block *nb);
 extern int __register_cpu_notifier(struct notifier_block *nb);
 extern void unregister_cpu_notifier(struct notifier_block *nb);
 extern void __unregister_cpu_notifier(struct notifier_block *nb);
 #else
 
 #ifndef MODULE
-extern int register_cpu_notifier(struct notifier_block *nb);
+	extern int
+	register_cpu_notifier(struct notifier_block *nb);
 extern int __register_cpu_notifier(struct notifier_block *nb);
 #else
-static inline int register_cpu_notifier(struct notifier_block *nb)
+	static inline int
+	register_cpu_notifier(struct notifier_block *nb)
 {
 	return 0;
 }
@@ -172,7 +179,8 @@ extern void cpu_maps_update_done(void);
 #define cpu_notifier(fn, pri)	do { (void)(fn); } while (0)
 #define __cpu_notifier(fn, pri)	do { (void)(fn); } while (0)
 
-static inline int register_cpu_notifier(struct notifier_block *nb)
+	static inline int
+	register_cpu_notifier(struct notifier_block *nb)
 {
 	return 0;
 }
