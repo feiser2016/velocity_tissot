@@ -587,6 +587,7 @@ static void cpufreq_stats_create_table(unsigned int cpu)
 	cpufreq_cpu_put(policy);
 }
 
+#ifdef CONFIG_UID_SYS_STATS
 void cpufreq_task_stats_remove_uids(uid_t uid_start, uid_t uid_end)
 {
 	struct uid_entry *uid_entry;
@@ -607,6 +608,7 @@ void cpufreq_task_stats_remove_uids(uid_t uid_start, uid_t uid_end)
 
 	rt_mutex_unlock(&uid_lock);
 }
+#endif
 
 static int cpufreq_stat_notifier_policy(struct notifier_block *nb,
 		unsigned long val, void *data)
