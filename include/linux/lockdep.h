@@ -532,11 +532,11 @@ do {									\
 #endif
 
 #ifdef CONFIG_LOCKDEP
-#ifdef CONFIG_PROVE_RCU
 void lockdep_rcu_suspicious(const char *file, const int line, const char *s);
 #else
 static inline void
 lockdep_rcu_suspicious(const char *file, const int line, const char *s)
 {
 }
+#endif
 #endif /* __LINUX_LOCKDEP_H */
