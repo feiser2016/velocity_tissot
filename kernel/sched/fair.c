@@ -2861,7 +2861,7 @@ static void check_enqueue_throttle(struct cfs_rq *cfs_rq);
 static void
 enqueue_entity(struct cfs_rq *cfs_rq, struct sched_entity *se, int flags)
 {
-	bool renorm = !(flags & ENQUEUE_WAKEUP) || (flags & ENQUEUE_MIGRATED);
+	bool renorm = !(flags & ENQUEUE_WAKEUP);
 	bool curr = cfs_rq->curr == se;
 
 	/*
@@ -7200,7 +7200,7 @@ static void nohz_balancer_kick(int type)
 
 	nohz.next_balance++;
 
-	ilb_cpu = find_new_ilb(type);
+	ilb_cpu = find_new_ilb();
 
 	if (ilb_cpu >= nr_cpu_ids)
 		return;
