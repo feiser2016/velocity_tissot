@@ -3310,7 +3310,6 @@ out_unlock:
 	preempt_disable(); /* avoid rq from going away on us */
 	__task_rq_unlock(rq);
 
-	balance_callback(rq);
 	preempt_enable();
 }
 #endif
@@ -3863,7 +3862,6 @@ change:
 	/*
 	 * Run balance callbacks after we've adjusted the PI chain.
 	 */
-	balance_callback(rq);
 	preempt_enable();
 
 	return 0;
@@ -7214,8 +7212,6 @@ void __init sched_init_smp(void)
 	hotcpu_notifier(cpuset_cpu_active, CPU_PRI_CPUSET_ACTIVE);
 	hotcpu_notifier(cpuset_cpu_inactive, CPU_PRI_CPUSET_INACTIVE);
 
-	update_cluster_topology();
-
 	init_hrtick();
 
 	/* Move init over to a non-isolated CPU */
@@ -8532,3 +8528,4 @@ void dump_cpu_task(int cpu)
 	pr_info("Task dump for CPU %d:\n", cpu);
 	sched_show_task(cpu_curr(cpu));
 }
+#endif
