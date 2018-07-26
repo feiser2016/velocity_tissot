@@ -715,6 +715,10 @@ struct nr_stats_s {
 
 DECLARE_PER_CPU(struct nr_stats_s, runqueue_stats);
 #endif
+static inline u64 __rq_clock_broken(struct rq *rq)
+{
+	return ACCESS_ONCE(rq->clock);
+}
 
 static inline u64 rq_clock(struct rq *rq)
 {
@@ -1326,46 +1330,11 @@ extern void update_idle_cpu_load(struct rq *this_rq);
 
 extern void init_task_runnable_average(struct task_struct *p);
 
-#if defined(CONFIG_INTELLI_HOTPLUG) || defined(CONFIG_LAZYPLUG)
-static inline unsigned int do_avg_nr_running(struct rq *rq)
-{
-
-	struct nr_stats_s *nr_stats = &per_cpu(runqueue_stats, rq->cpu);
-	unsigned int ave_nr_running = nr_stats->ave_nr_running;
-	s64 nr, deltax;
-
-	deltax = rq->clock_task - nr_stats->nr_last_stamp;
-	nr = NR_AVE_SCALE(rq->nr_running);
-
-	if (deltax > NR_AVE_PERIOD)
-		ave_nr_running = nr;
-	else
-		ave_nr_running +=
-			NR_AVE_DIV_PERIOD(deltax * (nr - ave_nr_running));
-
-	return ave_nr_running;
-}
-#endif
-
 static inline void add_nr_running(struct rq *rq, unsigned count)
 {
-#if defined(CONFIG_INTELLI_HOTPLUG) || defined(CONFIG_LAZYPLUG)
-	struct nr_stats_s *nr_stats = &per_cpu(runqueue_stats, rq->cpu);
-#endif
-
 	unsigned prev_nr = rq->nr_running;
 
-#if defined(CONFIG_INTELLI_HOTPLUG) || defined(CONFIG_LAZYPLUG)
-	write_seqcount_begin(&nr_stats->ave_seqcnt);
-	nr_stats->ave_nr_running = do_avg_nr_running(rq);
-	nr_stats->nr_last_stamp = rq->clock_task;
-#endif
-
 	rq->nr_running = prev_nr + count;
-
-#if defined(CONFIG_INTELLI_HOTPLUG) || defined(CONFIG_LAZYPLUG)
-	write_seqcount_end(&nr_stats->ave_seqcnt);
-#endif
 
 	if (prev_nr < 2 && rq->nr_running >= 2) {
 #ifdef CONFIG_SMP
@@ -1391,21 +1360,7 @@ static inline void add_nr_running(struct rq *rq, unsigned count)
 
 static inline void sub_nr_running(struct rq *rq, unsigned count)
 {
-#if defined(CONFIG_INTELLI_HOTPLUG) || defined(CONFIG_LAZYPLUG)
-	struct nr_stats_s *nr_stats = &per_cpu(runqueue_stats, rq->cpu);
-#endif
-
-#if defined(CONFIG_INTELLI_HOTPLUG) || defined(CONFIG_LAZYPLUG)
-	write_seqcount_begin(&nr_stats->ave_seqcnt);
-	nr_stats->ave_nr_running = do_avg_nr_running(rq);
-	nr_stats->nr_last_stamp = rq->clock_task;
-#endif
-
 	rq->nr_running -= count;
-
-#if defined(CONFIG_INTELLI_HOTPLUG) || defined(CONFIG_LAZYPLUG)
-	write_seqcount_end(&nr_stats->ave_seqcnt);
-#endif
 }
 
 static inline void rq_last_tick_reset(struct rq *rq)
