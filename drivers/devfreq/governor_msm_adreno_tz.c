@@ -388,11 +388,6 @@ extern int adreno_idler(struct devfreq_dev_status stats, struct devfreq *devfreq
 
 #if 1
 
-// mapping gpu level calculated linear conservation half curve values into a
-// bell curve of conservation  (lower is higher freq level)
-static int conservation_map_up[] = {15,15,10,4,5,6,12     ,5,5,5};
-static int conservation_map_down[] = {0,1,6,6,5,0,0     ,5,5,5};
-
 // make boost multiplication/division depending on current lvl, dampen the high freq up scaling! (lower is higher freq level)
 static int lvl_multiplicator_map_1[] = {5,5,6,8,9,1,1    ,1,1};
 static int lvl_divider_map_1[] = {10,10,10,10,10,1,1    ,1,1};
