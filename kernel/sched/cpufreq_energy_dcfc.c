@@ -380,8 +380,6 @@ static unsigned int nrggov_next_freq_shared(struct nrggov_cpu *sg_cpu,
 	struct nrggov_policy *sg_policy = sg_cpu->sg_policy;
 	struct cpufreq_policy *policy = sg_policy->policy;
 	u64 last_freq_update_time = sg_policy->last_freq_update_time;
-	unsigned int cap_max = SCHED_CAPACITY_SCALE;
-	unsigned int cap_min = 0;
 	unsigned int j;
 
 	nrggov_iowait_boost(sg_cpu, &util, &max);
@@ -392,7 +390,6 @@ static unsigned int nrggov_next_freq_shared(struct nrggov_cpu *sg_cpu,
 	for_each_cpu(j, policy->cpus) {
 		struct nrggov_cpu *j_sg_cpu;
 		unsigned long j_util, j_max;
-		unsigned int j_cap_max, j_cap_min;
 		s64 delta_ns;
 
 		if (j == smp_processor_id())
