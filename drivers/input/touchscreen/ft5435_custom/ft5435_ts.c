@@ -3374,7 +3374,6 @@ static int ft5435_ts_probe(struct i2c_client *client,
 	struct ft5435_ts_platform_data *pdata;
 	struct ft5435_ts_data *data;
 	struct input_dev *input_dev;
-	struct dentry *temp;
 	u8 reg_value;
 	u8 reg_addr;
 	int err, len;
